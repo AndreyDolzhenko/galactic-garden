@@ -1,60 +1,92 @@
-import './style.css'
-import typescriptLogo from './assets/typescript.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { setupCounter } from './counter.ts'
+import './style.css';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+// 1. Находим корневой элемент и заменяем его на Canvas
+const app = document.querySelector<HTMLDivElement>('#app')!;
+app.innerHTML = `
+  <canvas id="game-canvas" width="800" height="600"></canvas>
+`;
 
-<div class="ticks"></div>
+// 2. Получаем доступ к Canvas и контексту рисования
+const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://www.typescriptlang.org" target="_blank">
-          <img class="button-icon" src="${typescriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+// 3. Устанавливаем размеры Canvas (можно потом сделать адаптивным)
+canvas.width = 800;
+canvas.height = 600;
 
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
+// 4. Интерфейс для движущегося объекта (наш метеорит)
+interface MovingObject {
+  x: number;
+  y: number;
+  radius: number;
+  speedX: number;
+  speedY: number;
+  color: string;
+}
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+// 5. Создаём метеорит
+const meteor: MovingObject = {
+  x: 100,
+  y: 100,
+  radius: 15,
+  speedX: 2,
+  speedY: 1.5,
+  color: '#ff6600',
+};
+
+// 6. Функция рисования звёзд (статический фон)
+function drawStars() {
+  for (let i = 0; i < 100; i++) {
+    if (Math.random() > 0.98) { // рисуем только 2% звёзд за кадр, но так как кадров много — все появятся быстро
+      const starX = Math.random() * canvas.width;
+      const starY = Math.random() * canvas.height;
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.random()})`;
+      ctx.beginPath();
+      ctx.arc(starX, starY, Math.random() * 2 + 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+// 7. Функция рисования метеорита
+function drawMeteor() {
+  ctx.beginPath();
+  ctx.arc(meteor.x, meteor.y, meteor.radius, 0, Math.PI * 2);
+  ctx.fillStyle = meteor.color;
+  ctx.fill();
+  ctx.closePath();
+}
+
+// 8. Обновление позиции метеорита
+function updateMeteor() {
+  meteor.x += meteor.speedX;
+  meteor.y += meteor.speedY;
+  
+  // Отражение от границ
+  if (meteor.x + meteor.radius > canvas.width || meteor.x - meteor.radius < 0) {
+    meteor.speedX = -meteor.speedX;
+  }
+  if (meteor.y + meteor.radius > canvas.height || meteor.y - meteor.radius < 0) {
+    meteor.speedY = -meteor.speedY;
+  }
+}
+
+// 9. Главная функция анимации
+function animate() {
+  // Очищаем весь холст
+  ctx.fillStyle = '#0a0f2a'; // тёмно-синий космос
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Рисуем звёзды
+  drawStars();
+  
+  // Обновляем и рисуем метеорит
+  updateMeteor();
+  drawMeteor();
+  
+  // Запрашиваем следующий кадр
+  requestAnimationFrame(animate);
+}
+
+// 10. Запускаем анимацию
+animate();
